@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>UPIF</title>
+<style>
+:root {
+  --bg: #f7f6f2; --bg2: #ffffff; --bg3: #f0efe9;
+  --ink: #1a1a2e; --ink2: #4a4a6a; --ink3: #9898b8;
+  --accent: #2563eb; --accent2: #7c3aed;
+  --green: #059669; --red: #dc2626; --gold: #d97706;
+  --border: #e2e1d8; --shadow: 0 2px 16px rgba(26,26,46,0.08);
+  --header-bg: #1a1a2e;
+}
+html.dark {
+  --bg: #0f0f1a; --bg2: #1a1a2e; --bg3: #22223a;
+  --ink: #e8e8f0; --ink2: #a0a0c0; --ink3: #6060a0;
+  --border: #2e2e4a; --shadow: 0 2px 16px rgba(0,0,0,0.4);
+  --header-bg: #07070f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,'Yu Gothic',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; font-size:14px; }
+.mono { font-family:'Courier New',Courier,monospace; }
+header { background:var(--header-bg); color:#fff; padding:0 16px; height:52px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.dark-toggle { background:transparent; border:1px solid #444; color:#ccc; border-radius:20px; padding:4px 11px; font-size:12px; cursor:pointer; font-family:inherit; transition:all 0.15s; margin-left:8px; }
+.dark-toggle:hover { border-color:#888; color:#fff; }
+.logo { font-size:15px; font-weight:900; letter-spacing:0.1em; color:#fff; }
+.logo em { color:#60a5fa; font-style:normal; }
+.header-tabs { display:flex; gap:3px; }
+.htab { padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; border:none; background:transparent; color:#aaa; font-family:inherit; transition:all 0.15s; }
+.htab.active { background:#60a5fa; color:#fff; }
+main { max-width:1100px; margin:0 auto; padding:20px 14px; }
+.page { display:none; } .page.active { display:block; }
+.kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.kpi { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; box-shadow:var(--shadow); border-left:3px solid var(--accent); }
+.kpi.kgreen{border-left-color:var(--green)} .kpi.kred{border-left-color:var(--red)} .kpi.kgold{border-left-color:var(--gold)}
+.kpi-label { font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
+.kpi-val { font-family:'Courier New',monospace; font-size:16px; font-weight:700; color:var(--ink); }
+.kpi-val.g{color:var(--green)} .kpi-val.r{color:var(--red)} .kpi-val.gold{color:var(--gold)}
+.kpi-sub { font-size:10px; color:var(--ink3); margin-top:3px; font-family:'Courier New',monospace; }
+.chart-box { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow); }
+.chart-label { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px; }
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:0; }
+.toggle-bar { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.toggle-btn { display:flex; align-items:center; gap:5px; padding:4px 11px; border-radius:20px; border:2px solid; font-size:11px; font-family:inherit; font-weight:700; cursor:pointer; background:transparent; transition:all 0.15s; }
+.toggle-btn .dot { width:7px; height:7px; border-radius:50%; }
+.toggle-btn.off { opacity:0.3; }
+.svg-chart { width:100%; display:block; }
+.tbl-box { background:var(--bg2); border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:var(--shadow); margin-bottom:20px; }
+.tbl-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--border); background:var(--bg3); }
+.tbl-head-title { font-size:13px; font-weight:700; }
+table { width:100%; border-collapse:collapse; }
+thead th { padding:9px 12px; text-align:right; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink3); background:var(--bg3); border-bottom:1px solid var(--border); }
+thead th:first-child { text-align:left; }
+tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--bg3); }
+tbody td { padding:9px 12px; font-size:12px; font-family:'Courier New',monospace; text-align:right; vertical-align:middle; }
+tbody td:first-child { text-align:left; font-family:inherit; font-size:12px; color:var(--ink2); font-weight:600; }
+.td-pos{color:var(--green)} .td-neg{color:var(--red)}
+.tr-latest { background:#eff6ff !important; }
+html.dark .tr-latest { background:#1e2a4a !important; }
+html.dark .editing-row { background:#2a2a10 !important; }
+html.dark .badge-g { background:#064e3b; }
+html.dark .badge-r { background:#7f1d1d; }
+.badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; font-family:'Courier New',monospace; }
+.badge-g{background:#d1fae5;color:var(--green)} .badge-r{background:#fee2e2;color:var(--red)}
+.year-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:20px; }
+.year-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; box-shadow:var(--shadow); }
+.year-label { font-size:22px; font-weight:900; margin-bottom:10px; }
+.year-row { display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid var(--border); color:var(--ink2); }
+.year-row:last-child { border-bottom:none; }
+.year-row span:last-child { font-family:'Courier New',monospace; font-weight:600; }
+.yr-pos{color:var(--green)} .yr-neg{color:var(--red)}
+.form-box { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:20px; box-shadow:var(--shadow); margin-bottom:18px; }
+.form-title { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink3); margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+.fg { display:flex; flex-direction:column; gap:5px; }
+.fg label { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink3); }
+.fg input { background:var(--bg3); border:1px solid var(--border); color:var(--ink); padding:9px 11px; border-radius:7px; font-family:'Courier New',monospace; font-size:14px; outline:none; transition:border-color 0.2s; width:100%; }
+.fg input:focus { border-color:var(--accent); }
+.calc-preview { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.calc-item-label { font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; }
+.calc-item-val { font-family:'Courier New',monospace; font-size:14px; font-weight:700; color:var(--accent); }
+.form-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.btn { padding:9px 20px; border-radius:7px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all 0.15s; }
+.btn-primary{background:var(--accent);color:#fff} .btn-primary:hover{background:#1d4ed8}
+.btn-ghost{background:transparent;color:var(--ink2);border:1px solid var(--border)} .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-red{background:var(--red);color:#fff;font-size:11px;padding:5px 9px}
+.btn-excel{background:#16a34a;color:#fff;font-size:12px;padding:7px 14px}
+.form-note { font-size:11px; color:var(--green); }
+.editing-row { background:#fffbeb !important; }
+@media(max-width:600px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-row{grid-template-columns:1fr}.kpi-val{font-size:13px}main{padding:12px 10px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">UPIF <span style="color:#fff;font-weight:400;font-size:12px">（Unko Pension Investment Fund）運用資産</span></div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <div class="header-tabs">
+      <button class="htab active" onclick="showPage('dash',this)">ダッシュ</button>
+      <button class="htab" onclick="showPage('history',this)">記録</button>
+      <button class="htab" onclick="showPage('yearly',this)">年次</button>
+      <button class="htab" onclick="showPage('input',this)">入力</button>
+    </div>
+    <button class="dark-toggle" id="darkBtn" onclick="toggleDark()">🌙</button>
+  </div>
+</header>
+<main>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dash">
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="chart-box">
+    <div class="chart-label">総資産 推移</div>
+    <div class="toggle-bar">
+      <button class="toggle-btn" id="tog0" onclick="toggleLine(0)" style="border-color:#2563eb;color:#2563eb"><span class="dot" style="background:#2563eb"></span>総資産</button>
+      <button class="toggle-btn" id="tog1" onclick="toggleLine(1)" style="border-color:#d97706;color:#d97706"><span class="dot" style="background:#d97706"></span>現金+P</button>
+      <button class="toggle-btn" id="tog2" onclick="toggleLine(2)" style="border-color:#7c3aed;color:#7c3aed"><span class="dot" style="background:#7c3aed"></span>投資資産</button>
+    </div>
+    <div id="chartTotalWrap"></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-box" style="margin-bottom:0"><div class="chart-label">評価損益 推移</div><div id="chartProfitWrap"></div></div>
+    <div class="chart-box" style="margin-bottom:0"><div class="chart-label">総リターン (%)</div><div id="chartReturnWrap"></div></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="tbl-box">
+    <div class="tbl-head">
+      <div class="tbl-head-title">月次記録一覧</div>
+      <button class="btn btn-excel" onclick="exportCSV()">📥 CSV出力</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>投資資産</th><th>元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- YEARLY -->
+<div class="page" id="page-yearly">
+  <div class="year-grid" id="yearGrid"></div>
+  <div class="chart-box"><div class="chart-label">年次 総資産推移（年末値）</div><div id="chartYearlyWrap"></div></div>
+</div>
+
+<!-- INPUT -->
+<div class="page" id="page-input">
+  <div class="form-box">
+    <div class="form-title" id="formTitle">新規月次データ入力</div>
+    <div class="form-grid">
+      <div class="fg"><label>日付 (YYYY/MM)</label><input id="f_date" placeholder="2026/03" maxlength="7"></div>
+      <div class="fg"><label>総資産 (円)</label><input id="f_total" type="number" placeholder="0" oninput="autoCalc()"></div>
+      <div class="fg"><label>現金+ポイント (円)</label><input id="f_cash" type="number" placeholder="0" oninput="autoCalc()"></div>
+      <div class="fg"><label>評価損益 (円)</label><input id="f_profit" type="number" placeholder="0" oninput="autoCalc()"></div>
+    </div>
+    <div class="calc-preview">
+      <div><div class="calc-item-label">投資資産（自動）</div><div class="calc-item-val" id="calc_invest">—</div></div>
+      <div><div class="calc-item-label">元本（自動）</div><div class="calc-item-val" id="calc_principal">—</div></div>
+      <div><div class="calc-item-label">リターン（自動）</div><div class="calc-item-val" id="calc_ret">—</div></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="saveBtn" onclick="saveRecord()">保存</button>
+      <button class="btn btn-ghost" onclick="cancelEdit()">キャンセル</button>
+      <span class="form-note" id="formNote"></span>
+    </div>
+  </div>
+  <div class="tbl-box">
+    <div class="tbl-head"><div class="tbl-head-title">最近の記録（編集・削除）</div></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
+        <tbody id="inputTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+const SEED=[
+  ["2022/11",1992132,1025100,967032,967000,32,0.00],
+  ["2022/12",2268250,1000490,1267760,1366500,-98740,-7.23],
+  ["2023/01",2459152,1104441,1354711,1417500,-62789,-4.43],
+  ["2023/02",2380501,1770439,610062,614675,-4613,-0.75],
+  ["2023/03",2362587,1140439,1222148,1229070,-6922,-1.13],
+  ["2023/04",1935440,427240,1508200,1483931,24269,3.95],
+  ["2023/05",2543066,681555,1861511,1817310,44201,7.19],
+  ["2023/06",2617606,493404,2124202,1963928,160274,26.07],
+  ["2023/07",2461314,295858,2165456,1999588,165868,26.98],
+  ["2023/08",2533097,271770,2261327,2093235,168092,27.35],
+  ["2023/09",2320572,240908,2079664,2002294,77370,12.59],
+  ["2023/10",2355378,483805,1871573,1804781,66792,10.87],
+  ["2023/11",2356594,1209631,1146963,996932,150031,15.05],
+  ["2023/12",1824685,52372,1772313,1605525,166788,10.39],
+  ["2024/01",2536699,568983,1967716,1683576,284140,16.88],
+  ["2024/02",2650210,499299,2150911,1759119,391792,22.27],
+  ["2024/03",2900949,571228,2329721,1848317,481404,26.05],
+  ["2024/04",2958696,575327,2383369,1921916,461453,24.01],
+  ["2024/05",4167900,732115,3435785,2833493,602292,21.26],
+  ["2024/06",4478611,720053,3758558,2958550,800008,27.04],
+  ["2024/07",4472924,753018,3719906,3089793,630113,20.39],
+  ["2024/08",4526743,812252,3714491,3214931,499560,15.54],
+  ["2024/09",4803199,824116,3979083,3339117,639966,19.17],
+  ["2024/10",4898061,1057493,3840568,3030782,809786,26.72],
+  ["2024/11",4489802,604675,3885127,3065459,819668,26.74],
+  ["2024/12",4487993,996202,3491791,2598762,893029,34.36],
+  ["2025/01",4123914,613706,3510208,2607759,902449,34.61],
+  ["2025/02",3931760,1109704,2822056,2158351,663705,30.75],
+  ["2025/03",3821775,1063357,2758418,2168518,589900,27.20],
+  ["2025/04",3239449,676247,2563202,2173554,389648,17.93],
+  ["2025/05",3257940,523144,2734796,2179439,555357,25.48],
+  ["2025/06",3478947,601738,2877209,2184655,692554,31.70],
+  ["2025/07",3397230,339221,3058009,2191842,866167,39.52],
+  ["2025/08",3410796,306975,3103821,2196970,906851,41.28],
+  ["2025/09",3535813,307013,3228800,2202004,1026796,46.63],
+  ["2025/10",4194981,764271,3430710,2208199,1222511,55.36],
+  ["2025/11",5762686,1655274,4107412,2814318,1293094,45.95],
+  ["2025/12",5826464,1636967,4189497,2825577,1363920,48.27],
+  ["2026/01",6102455,1798198,4304257,2935610,1368647,46.62],
+  ["2026/02",5808139,1315777,4492362,3056479,1435883,46.98],
+  ["2026/03",6536046,1717569,4818477,3675977,1142500,31.08],
+];
+
+const store=(()=>{try{localStorage.setItem('_t','1');localStorage.removeItem('_t');return localStorage;}catch(e){const m={};return{getItem:k=>m[k]||null,setItem:(k,v)=>m[k]=v};}})();
+let records=JSON.parse(store.getItem('assetlog_v5')||'null');
+if(!records){records=SEED.map(r=>({date:r[0],total:r[1],cash:r[2],invest:r[3],principal:r[4],profit:r[5],ret:r[6]}));saveAll();}
+function saveAll(){store.setItem('assetlog_v5',JSON.stringify(records));}
+function sortRec(){records.sort((a,b)=>a.date<b.date?-1:1);}
+function fmt(n,sign=false){if(n===null||n===undefined)return'—';const abs=Math.abs(Math.round(n)).toLocaleString('ja-JP');if(sign)return(n>=0?'+¥':'-¥')+abs;return'¥'+abs;}
+function pct(n,sign=false){if(n===null||n===undefined)return'—';return(sign&&n>=0?'+':'')+n.toFixed(2)+'%';}
+function cls(n){return n>0?'td-pos':n<0?'td-neg':'';}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dash')renderDash();
+  if(id==='history')renderHistory();
+  if(id==='yearly')renderYearly();
+  if(id==='input')renderInputTable();
+}
+
+const lineVis=[true,true,true];
+
+function makeLine(datasets,height=240){
+  const W=800,H=height,PL=54,PR=10,PT=14,PB=38;
+  const cW=W-PL-PR,cH=H-PT-PB;
+  const visible=datasets.filter((_,i)=>lineVis[i]);
+  if(!visible.length)return'<svg viewBox="0 0 800 '+height+'" class="svg-chart" style="height:'+height+'px"></svg>';
+  const allV=visible.flatMap(d=>d.data);
+  const minV=Math.min(...allV)*0.96,maxV=Math.max(...allV)*1.02;
+  const n=datasets[0].data.length;
+  const labels=datasets[0].labels;
+  const xp=i=>PL+(i/(n-1))*cW;
+  const yp=v=>PT+(1-(v-minV)/(maxV-minV))*cH;
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="svg-chart" style="height:${height}px">`;
+  for(let i=0;i<=4;i++){
+    const y=PT+(i/4)*cH,val=maxV-(i/4)*(maxV-minV);
+    const lbl=val>=10000?Math.round(val/10000)+'万':Math.round(val/1000)+'千';
+    s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+  }
+  const step=Math.ceil(n/10);
+  for(let i=0;i<n;i+=step){
+    s+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9898b8">${labels[i]}</text>`;
+  }
+  const colors=['#2563eb','#d97706','#7c3aed'];
+  const fills=['rgba(37,99,235,0.07)','rgba(217,119,6,0.04)','rgba(124,58,237,0.04)'];
+  const dashes=['','6,3',''];
+  datasets.forEach((ds,di)=>{
+    if(!lineVis[di])return;
+    const pts=ds.data.map((v,i)=>`${xp(i)},${yp(v)}`).join(' ');
+    s+=`<polygon points="${xp(0)},${PT+cH} ${pts} ${xp(n-1)},${PT+cH}" fill="${fills[di]}"/>`;
+    const da=dashes[di]?`stroke-dasharray="${dashes[di]}"`:''
+    s+=`<polyline points="${pts}" fill="none" stroke="${colors[di]}" stroke-width="2" stroke-linejoin="round" ${da}/>`;
+    const lx=xp(n-1),ly=yp(ds.data[n-1]);
+    s+=`<circle cx="${lx}" cy="${ly}" r="3" fill="${colors[di]}"/>`;
+  });
+  s+='</svg>';return s;
+}
+
+function makeBar(data,labels,height=180){
+  const W=800,H=height,PL=54,PR=10,PT=14,PB=38;
+  const cW=W-PL-PR,cH=H-PT-PB;
+  const maxA=Math.max(...data.map(Math.abs))*1.1||1;
+  const zY=PT+cH*(maxA/(2*maxA));
+  const n=data.length,bw=Math.max(3,(cW/n)*0.55);
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="svg-chart" style="height:${height}px">`;
+  for(let i=0;i<=4;i++){
+    const y=PT+(i/4)*cH,val=maxA-(i/4)*(2*maxA);
+    const lbl=Math.abs(val)>=10000?(val/10000).toFixed(0)+'万':Math.round(val);
+    s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+  }
+  s+=`<line x1="${PL}" y1="${zY}" x2="${W-PR}" y2="${zY}" stroke="#9898b8" stroke-width="1"/>`;
+  const step=Math.ceil(n/10);
+  data.forEach((v,i)=>{
+    const x=PL+(i/(n-1))*cW,bH=Math.abs(v)/(2*maxA)*cH;
+    const bY=v>=0?zY-bH:zY;
+    s+=`<rect x="${x-bw/2}" y="${bY}" width="${bw}" height="${bH}" fill="${v>=0?'rgba(5,150,105,0.75)':'rgba(220,38,38,0.75)'}" rx="2"/>`;
+    if(i%step===0)s+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9898b8">${labels[i]}</text>`;
+  });
+  s+='</svg>';return s;
+}
+
+function makeGroupBar(ds,labels,height=200){
+  const W=800,H=height,PL=54,PR=10,PT=24,PB=38;
+  const cW=W-PL-PR,cH=H-PT-PB;
+  const maxV=Math.max(...ds.flatMap(d=>d.data))*1.05;
+  const n=labels.length,gW=cW/n,bw=gW*0.32;
+  const colors=['rgba(37,99,235,0.8)','rgba(156,163,175,0.7)'];
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="svg-chart" style="height:${height}px">`;
+  for(let i=0;i<=4;i++){
+    const y=PT+(i/4)*cH,val=maxV*(1-i/4);
+    const lbl=val>=10000?Math.round(val/10000)+'万':Math.round(val);
+    s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+  }
+  labels.forEach((lbl,i)=>{
+    const cx=PL+(i+0.5)*gW;
+    ds.forEach((d,di)=>{
+      const v=d.data[i],bH=(v/maxV)*cH,bX=cx+(di-0.5)*bw-bw*0.05;
+      s+=`<rect x="${bX}" y="${PT+cH-bH}" width="${bw}" height="${bH}" fill="${colors[di]}" rx="3"/>`;
+    });
+    s+=`<text x="${cx}" y="${H-4}" text-anchor="middle" font-size="10" fill="#9898b8">${lbl}</text>`;
+  });
+  ds.forEach((d,di)=>{
+    s+=`<rect x="${PL+di*80}" y="6" width="10" height="10" fill="${colors[di]}" rx="2"/>`;
+    s+=`<text x="${PL+di*80+14}" y="15" font-size="10" fill="#9898b8">${d.label}</text>`;
+  });
+  s+='</svg>';return s;
+}
+
+function renderDash(){
+  sortRec();
+  const r=records[records.length-1],p=records[records.length-2];
+  const mom=p?r.total-p.total:0;
+  const kpis=[
+    {label:'総資産',val:fmt(r.total),sub:(mom>=0?'▲':'▼')+fmt(Math.abs(mom))+' 前月比',cls:''},
+    {label:'現金+ポイント',val:fmt(r.cash),sub:r.date,cls:'kgold'},
+    {label:'投資資産',val:fmt(r.invest),sub:'',cls:''},
+    {label:'元本',val:fmt(r.principal),sub:'累計投資額',cls:''},
+    {label:'評価損益',val:fmt(r.profit,true),sub:'',cls:r.profit>=0?'kgreen':'kred'},
+    {label:'総リターン',val:pct(r.ret,true),sub:'元本比',cls:r.ret>=0?'kgreen':'kred'},
+  ];
+  document.getElementById('kpiRow').innerHTML=kpis.map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val ${k.cls==='kgreen'?'g':k.cls==='kred'?'r':k.cls==='kgold'?'gold':''}">${k.val}</div>
+      ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
+    </div>`).join('');
+  const labels=records.map(r=>r.date);
+  document.getElementById('chartTotalWrap').innerHTML=makeLine([
+    {label:'総資産',data:records.map(r=>r.total),labels},
+    {label:'現金+P',data:records.map(r=>r.cash),labels},
+    {label:'投資資産',data:records.map(r=>r.invest),labels},
+  ],240);
+  document.getElementById('chartProfitWrap').innerHTML=makeBar(records.map(r=>r.profit),labels,180);
+  document.getElementById('chartReturnWrap').innerHTML=makeBar(records.map(r=>r.ret),labels,180);
+}
+
+function toggleLine(i){
+  lineVis[i]=!lineVis[i];
+  document.getElementById('tog'+i).classList.toggle('off',!lineVis[i]);
+  const labels=records.map(r=>r.date);
+  document.getElementById('chartTotalWrap').innerHTML=makeLine([
+    {label:'総資産',data:records.map(r=>r.total),labels},
+    {label:'現金+P',data:records.map(r=>r.cash),labels},
+    {label:'投資資産',data:records.map(r=>r.invest),labels},
+  ],240);
+}
+
+function renderHistory(){
+  sortRec();
+  document.getElementById('historyTable').innerHTML=[...records].reverse().map((r,i)=>{
+    const prev=records[records.length-2-i];
+    const mom=prev?r.total-prev.total:null;
+    return`<tr${i===0?' class="tr-latest"':''}>
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
+      <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
+      <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
+      <td class="${mom!==null?cls(mom):''}">${mom!==null?fmt(mom,true):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderYearly(){
+  sortRec();
+  const by={};
+  records.forEach(r=>{const y=r.date.split('/')[0];if(!by[y])by[y]=[];by[y].push(r);});
+  const yl=Object.keys(by).sort();
+  document.getElementById('yearGrid').innerHTML=yl.map(y=>{
+    const rows=by[y],last=rows[rows.length-1];
+    const prevY=yl[yl.indexOf(y)-1];
+    const prevL=prevY?by[prevY][by[prevY].length-1]:null;
+    const yoy=prevL?last.total-prevL.total:null;
+    const maxP=Math.max(...rows.map(r=>r.profit)),minP=Math.min(...rows.map(r=>r.profit));
+    return`<div class="year-card">
+      <div class="year-label">${y}</div>
+      <div class="year-row"><span>年末総資産</span><span>${fmt(last.total)}</span></div>
+      <div class="year-row"><span>年末リターン</span><span class="${last.ret>=0?'yr-pos':'yr-neg'}">${pct(last.ret,true)}</span></div>
+      <div class="year-row"><span>年間増減</span><span class="${yoy!==null?(yoy>=0?'yr-pos':'yr-neg'):''}">${yoy!==null?fmt(yoy,true):'—'}</span></div>
+      <div class="year-row"><span>最大評価益</span><span class="yr-pos">${fmt(maxP)}</span></div>
+      <div class="year-row"><span>最小評価益</span><span class="${minP>=0?'yr-pos':'yr-neg'}">${fmt(minP)}</span></div>
+      <div class="year-row"><span>記録月数</span><span>${rows.length}ヶ月</span></div>
+    </div>`;
+  }).join('');
+  const ye=yl.map(y=>by[y][by[y].length-1]);
+  document.getElementById('chartYearlyWrap').innerHTML=makeGroupBar(
+    [{label:'総資産',data:ye.map(r=>r.total)}],
+    ye.map(r=>r.date),220);
+}
+
+let editIdx=null;
+function autoCalc(){
+  const total=parseFloat(document.getElementById('f_total').value)||0;
+  const cash=parseFloat(document.getElementById('f_cash').value)||0;
+  const profit=parseFloat(document.getElementById('f_profit').value)||0;
+  const invest=total-cash,principal=invest-profit;
+  const ret=principal>0?(profit/principal)*100:0;
+  const fv=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+  document.getElementById('calc_invest').textContent=(total||cash)?fv(invest):'—';
+  document.getElementById('calc_principal').textContent=(total||cash)?fv(principal):'—';
+  document.getElementById('calc_ret').textContent=principal?(ret>=0?'+':'')+ret.toFixed(2)+'%':'—';
+}
+function clearForm(){
+  ['f_total','f_cash','f_profit'].forEach(id=>document.getElementById(id).value='');
+  ['calc_invest','calc_principal','calc_ret'].forEach(id=>document.getElementById(id).textContent='—');
+  const now=new Date();
+  document.getElementById('f_date').value=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('formTitle').textContent='新規月次データ入力';
+  document.getElementById('saveBtn').textContent='保存';
+  document.getElementById('formNote').textContent='';
+}
+function renderInputTable(){
+  clearForm();editIdx=null;sortRec();
+  document.getElementById('inputTable').innerHTML=[...records].reverse().slice(0,20).map((r,i)=>{
+    const ri=records.length-1-i;
+    return`<tr id="itr-${ri}">
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
+      <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
+      <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
+        <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function editRecord(idx){
+  editIdx=idx;const r=records[idx];
+  document.getElementById('f_date').value=r.date;
+  document.getElementById('f_total').value=r.total;
+  document.getElementById('f_cash').value=r.cash;
+  document.getElementById('f_profit').value=r.profit;
+  autoCalc();
+  document.getElementById('formTitle').textContent=`編集中: ${r.date}`;
+  document.getElementById('saveBtn').textContent='更新';
+  document.getElementById('formNote').textContent='既存レコードを更新します';
+  document.getElementById('itr-'+idx)?.classList.add('editing-row');
+  window.scrollTo(0,0);
+}
+function cancelEdit(){renderInputTable();}
+function saveRecord(){
+  const date=document.getElementById('f_date').value.trim();
+  const total=parseFloat(document.getElementById('f_total').value)||0;
+  const cash=parseFloat(document.getElementById('f_cash').value)||0;
+  const profit=parseFloat(document.getElementById('f_profit').value)||0;
+  const invest=total-cash,principal=invest-profit;
+  const ret=principal>0?(profit/principal)*100:0;
+  if(!date.match(/^\d{4}\/\d{2}$/)){alert('日付はYYYY/MM形式で');return;}
+  if(!total){alert('総資産を入力してください');return;}
+  const entry={date,total,cash,invest,principal,profit,ret};
+  if(editIdx!==null){records[editIdx]=entry;}
+  else{
+    const ex=records.findIndex(r=>r.date===date);
+    if(ex>=0){if(!confirm(`${date}のデータが既にあります。上書きしますか？`))return;records[ex]=entry;}
+    else records.push(entry);
+  }
+  saveAll();renderInputTable();
+  document.getElementById('formNote').textContent='✓ 保存しました';
+  setTimeout(()=>document.getElementById('formNote').textContent='',2000);
+}
+function deleteRecord(idx){
+  if(!confirm(`${records[idx].date}のデータを削除しますか？`))return;
+  records.splice(idx,1);saveAll();renderInputTable();
+}
+function exportCSV(){
+  sortRec();
+  const h=['日付','総資産','現金+ポイント','投資資産','元本','評価損益','総リターン(%)','前月比'];
+  const rows=records.map((r,i)=>{
+    const prev=i>0?records[i-1]:null;
+    return[r.date,r.total,r.cash,r.invest,r.principal,r.profit,r.ret,prev?r.total-prev.total:''];
+  });
+  const csv='\uFEFF'+[h,...rows].map(row=>row.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const now=new Date();
+  a.download=`資産記録_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  a.click();
+}
+function toggleDark(){
+  const dark=document.documentElement.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent=dark?'☀️':'🌙';
+  store.setItem('upif_dark',dark?'1':'0');
+}
+window.addEventListener('load',()=>{
+  if(store.getItem('upif_dark')==='1'){
+    document.documentElement.classList.add('dark');
+    document.getElementById('darkBtn').textContent='☀️';
+  }
+  renderDash();
+});
+</script>
+</body>
+</html>
