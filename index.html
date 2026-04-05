@@ -352,14 +352,15 @@ function makeGroupBar(ds,labels,height=200){
 function renderDash(){
   sortRec();
   const r=records[records.length-1],p=records[records.length-2];
-  const mom=p?r.total-p.total:0;
+  const diff=(a,b)=>p?a-b:null;
+  const sub=(d)=>d===null?'':((d>=0?'▲':'▼')+fmt(Math.abs(d))+' 前月比');
   const kpis=[
-    {label:'総資産',val:fmt(r.total),sub:(mom>=0?'▲':'▼')+fmt(Math.abs(mom))+' 前月比',cls:''},
-    {label:'現金+ポイント',val:fmt(r.cash),sub:r.date,cls:'kgold'},
-    {label:'投資資産',val:fmt(r.invest),sub:'',cls:''},
-    {label:'元本',val:fmt(r.principal),sub:'累計投資額',cls:''},
-    {label:'評価損益',val:fmt(r.profit,true),sub:'',cls:r.profit>=0?'kgreen':'kred'},
-    {label:'総リターン',val:pct(r.ret,true),sub:'元本比',cls:r.ret>=0?'kgreen':'kred'},
+    {label:'総資産',    val:fmt(r.total),        sub:sub(diff(r.total,p?.total)),       cls:''},
+    {label:'現金+ポイント',val:fmt(r.cash),       sub:(sub(diff(r.cash,p?.cash))||r.date), cls:'kgold'},
+    {label:'投資資産',  val:fmt(r.invest),        sub:sub(diff(r.invest,p?.invest)),     cls:''},
+    {label:'元本',      val:fmt(r.principal),     sub:'累計投資額',                       cls:''},
+    {label:'評価損益',  val:fmt(r.profit,true),   sub:sub(diff(r.profit,p?.profit)),     cls:r.profit>=0?'kgreen':'kred'},
+    {label:'総リターン',val:pct(r.ret,true),      sub:(p?((r.ret-p.ret>=0?'▲':'▼')+(Math.abs(r.ret-p.ret)).toFixed(2)+'% 前月比'):'元本比'), cls:r.ret>=0?'kgreen':'kred'},
   ];
   document.getElementById('kpiRow').innerHTML=kpis.map(k=>`
     <div class="kpi ${k.cls}">
