@@ -277,11 +277,11 @@ function makeLine(datasets,height=240){
     const y=PT+(i/4)*cH,val=maxV-(i/4)*(maxV-minV);
     const lbl=val>=10000?Math.round(val/10000)+'万':Math.round(val/1000)+'千';
     s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
-    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="12" fill="#666688">${lbl}</text>`;
   }
   const step=Math.ceil(n/10);
   for(let i=0;i<n;i+=step){
-    s+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9898b8">${labels[i]}</text>`;
+    s+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="12" fill="#666688">${labels[i]}</text>`;
   }
   const colors=['#2563eb','#d97706','#7c3aed'];
   const fills=['rgba(37,99,235,0.07)','rgba(217,119,6,0.04)','rgba(124,58,237,0.04)'];
@@ -309,7 +309,7 @@ function makeBar(data,labels,height=180){
     const y=PT+(i/4)*cH,val=maxA-(i/4)*(2*maxA);
     const lbl=Math.abs(val)>=10000?(val/10000).toFixed(0)+'万':Math.round(val);
     s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
-    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="12" fill="#666688">${lbl}</text>`;
   }
   s+=`<line x1="${PL}" y1="${zY}" x2="${W-PR}" y2="${zY}" stroke="#9898b8" stroke-width="1"/>`;
   const step=Math.ceil(n/10);
@@ -317,7 +317,7 @@ function makeBar(data,labels,height=180){
     const x=PL+(i/(n-1))*cW,bH=Math.abs(v)/(2*maxA)*cH;
     const bY=v>=0?zY-bH:zY;
     s+=`<rect x="${x-bw/2}" y="${bY}" width="${bw}" height="${bH}" fill="${v>=0?'rgba(5,150,105,0.75)':'rgba(220,38,38,0.75)'}" rx="2"/>`;
-    if(i%step===0)s+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9898b8">${labels[i]}</text>`;
+    if(i%step===0)s+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="12" fill="#666688">${labels[i]}</text>`;
   });
   s+='</svg>';return s;
 }
@@ -333,7 +333,7 @@ function makeGroupBar(ds,labels,height=200){
     const y=PT+(i/4)*cH,val=maxV*(1-i/4);
     const lbl=val>=10000?Math.round(val/10000)+'万':Math.round(val);
     s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e1d8" stroke-width="1"/>`;
-    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9898b8">${lbl}</text>`;
+    s+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="12" fill="#666688">${lbl}</text>`;
   }
   labels.forEach((lbl,i)=>{
     const cx=PL+(i+0.5)*gW;
@@ -341,11 +341,11 @@ function makeGroupBar(ds,labels,height=200){
       const v=d.data[i],bH=(v/maxV)*cH,bX=cx+(di-0.5)*bw-bw*0.05;
       s+=`<rect x="${bX}" y="${PT+cH-bH}" width="${bw}" height="${bH}" fill="${colors[di]}" rx="3"/>`;
     });
-    s+=`<text x="${cx}" y="${H-4}" text-anchor="middle" font-size="10" fill="#9898b8">${lbl}</text>`;
+    s+=`<text x="${cx}" y="${H-4}" text-anchor="middle" font-size="12" fill="#666688">${lbl}</text>`;
   });
   ds.forEach((d,di)=>{
     s+=`<rect x="${PL+di*80}" y="6" width="10" height="10" fill="${colors[di]}" rx="2"/>`;
-    s+=`<text x="${PL+di*80+14}" y="15" font-size="10" fill="#9898b8">${d.label}</text>`;
+    s+=`<text x="${PL+di*80+14}" y="15" font-size="12" fill="#666688">${d.label}</text>`;
   });
   s+='</svg>';return s;
 }
