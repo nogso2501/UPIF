@@ -91,6 +91,7 @@ html.dark .badge-r { background:#7f1d1d; }
 .btn-excel{background:#16a34a;color:#fff;font-size:12px;padding:7px 14px}
 .form-note { font-size:11px; color:var(--green); }
 .editing-row { background:#fffbeb !important; }
+@media(max-width:600px){.sp-hide{display:none!important}}
 @media(max-width:600px){
   .kpi-row{grid-template-columns:repeat(2,1fr)}
   .charts-row{grid-template-columns:1fr}
@@ -130,6 +131,8 @@ html.dark .badge-r { background:#7f1d1d; }
       <button class="toggle-btn" id="tog0" onclick="toggleLine(0)" style="border-color:#2563eb;color:#2563eb"><span class="dot" style="background:#2563eb"></span>総資産</button>
       <button class="toggle-btn" id="tog1" onclick="toggleLine(1)" style="border-color:#d97706;color:#d97706"><span class="dot" style="background:#d97706"></span>現金+P</button>
       <button class="toggle-btn" id="tog2" onclick="toggleLine(2)" style="border-color:#7c3aed;color:#7c3aed"><span class="dot" style="background:#7c3aed"></span>投資資産</button>
+      <button class="toggle-btn off" id="tog3" onclick="toggleLine(3)" style="border-color:#059669;color:#059669"><span class="dot" style="background:#059669"></span>元本</button>
+      <button class="toggle-btn off" id="tog4" onclick="toggleLine(4)" style="border-color:#e11d48;color:#e11d48"><span class="dot" style="background:#e11d48"></span>評価損益</button>
     </div>
     <div id="chartTotalWrap"></div>
   </div>
@@ -148,7 +151,7 @@ html.dark .badge-r { background:#7f1d1d; }
     </div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>投資資産</th><th>元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th class="sp-hide">現金+P</th><th class="sp-hide">投資資産</th><th class="sp-hide">元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
         <tbody id="historyTable"></tbody>
       </table>
     </div>
@@ -259,7 +262,7 @@ function showPage(id,btn){
   if(id==='input')renderInputTable();
 }
 
-const lineVis=[true,true,true];
+const lineVis=[true,true,true,false,false];
 
 function makeLine(datasets,height=240){
   const W=800,H=height,PL=54,PR=10,PT=14,PB=38;
@@ -283,17 +286,15 @@ function makeLine(datasets,height=240){
   for(let i=0;i<n;i+=step){
     s+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="12" fill="#666688">${labels[i]}</text>`;
   }
-  const colors=['#2563eb','#d97706','#7c3aed'];
-  const fills=['rgba(37,99,235,0.07)','rgba(217,119,6,0.04)','rgba(124,58,237,0.04)'];
-  const dashes=['','6,3',''];
   datasets.forEach((ds,di)=>{
     if(!lineVis[di])return;
+    const color=ds.color||'#2563eb', fill=ds.fill||'rgba(37,99,235,0.07)', dash=ds.dash||'';
     const pts=ds.data.map((v,i)=>`${xp(i)},${yp(v)}`).join(' ');
-    s+=`<polygon points="${xp(0)},${PT+cH} ${pts} ${xp(n-1)},${PT+cH}" fill="${fills[di]}"/>`;
-    const da=dashes[di]?`stroke-dasharray="${dashes[di]}"`:''
-    s+=`<polyline points="${pts}" fill="none" stroke="${colors[di]}" stroke-width="2" stroke-linejoin="round" ${da}/>`;
+    s+=`<polygon points="${xp(0)},${PT+cH} ${pts} ${xp(n-1)},${PT+cH}" fill="${fill}"/>`;
+    const da=dash?`stroke-dasharray="${dash}"`:''
+    s+=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" ${da}/>`;
     const lx=xp(n-1),ly=yp(ds.data[n-1]);
-    s+=`<circle cx="${lx}" cy="${ly}" r="3" fill="${colors[di]}"/>`;
+    s+=`<circle cx="${lx}" cy="${ly}" r="3" fill="${ds.color||'#2563eb'}"/>`;
   });
   s+='</svg>';return s;
 }
@@ -369,24 +370,26 @@ function renderDash(){
       ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
     </div>`).join('');
   const labels=records.map(r=>r.date);
-  document.getElementById('chartTotalWrap').innerHTML=makeLine([
-    {label:'総資産',data:records.map(r=>r.total),labels},
-    {label:'現金+P',data:records.map(r=>r.cash),labels},
-    {label:'投資資産',data:records.map(r=>r.invest),labels},
-  ],240);
+  redrawMainChart(labels);
   document.getElementById('chartProfitWrap').innerHTML=makeBar(records.map(r=>r.profit),labels,180);
   document.getElementById('chartReturnWrap').innerHTML=makeBar(records.map(r=>r.ret),labels,180);
+}
+
+function redrawMainChart(labels){
+  if(!labels)labels=records.map(r=>r.date);
+  document.getElementById('chartTotalWrap').innerHTML=makeLine([
+    {label:'総資産',   data:records.map(r=>r.total),    labels, color:'#2563eb', fill:'rgba(37,99,235,0.07)',   dash:''},
+    {label:'現金+P',  data:records.map(r=>r.cash),     labels, color:'#d97706', fill:'rgba(217,119,6,0.04)',   dash:'6,3'},
+    {label:'投資資産', data:records.map(r=>r.invest),   labels, color:'#7c3aed', fill:'rgba(124,58,237,0.04)',  dash:''},
+    {label:'元本',    data:records.map(r=>r.principal), labels, color:'#059669', fill:'rgba(5,150,105,0.04)',   dash:'4,3'},
+    {label:'評価損益', data:records.map(r=>r.profit),   labels, color:'#e11d48', fill:'rgba(225,29,72,0.04)',   dash:'3,3'},
+  ],240);
 }
 
 function toggleLine(i){
   lineVis[i]=!lineVis[i];
   document.getElementById('tog'+i).classList.toggle('off',!lineVis[i]);
-  const labels=records.map(r=>r.date);
-  document.getElementById('chartTotalWrap').innerHTML=makeLine([
-    {label:'総資産',data:records.map(r=>r.total),labels},
-    {label:'現金+P',data:records.map(r=>r.cash),labels},
-    {label:'投資資産',data:records.map(r=>r.invest),labels},
-  ],240);
+  redrawMainChart();
 }
 
 function renderHistory(){
@@ -395,8 +398,8 @@ function renderHistory(){
     const prev=records[records.length-2-i];
     const mom=prev?r.total-prev.total:null;
     return`<tr${i===0?' class="tr-latest"':''}>
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
-      <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="sp-hide">${fmt(r.cash)}</td>
+      <td class="sp-hide">${fmt(r.invest)}</td><td class="sp-hide">${fmt(r.principal)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td class="${mom!==null?cls(mom):''}">${mom!==null?fmt(mom,true):'—'}</td>
