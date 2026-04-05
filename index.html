@@ -91,7 +91,6 @@ html.dark .badge-r { background:#7f1d1d; }
 .btn-excel{background:#16a34a;color:#fff;font-size:12px;padding:7px 14px}
 .form-note { font-size:11px; color:var(--green); }
 .editing-row { background:#fffbeb !important; }
-@media(max-width:600px){.sp-hide{display:none!important}}
 @media(max-width:600px){
   .kpi-row{grid-template-columns:repeat(2,1fr)}
   .charts-row{grid-template-columns:1fr}
@@ -131,8 +130,7 @@ html.dark .badge-r { background:#7f1d1d; }
       <button class="toggle-btn" id="tog0" onclick="toggleLine(0)" style="border-color:#2563eb;color:#2563eb"><span class="dot" style="background:#2563eb"></span>総資産</button>
       <button class="toggle-btn" id="tog1" onclick="toggleLine(1)" style="border-color:#d97706;color:#d97706"><span class="dot" style="background:#d97706"></span>現金+P</button>
       <button class="toggle-btn" id="tog2" onclick="toggleLine(2)" style="border-color:#7c3aed;color:#7c3aed"><span class="dot" style="background:#7c3aed"></span>投資資産</button>
-      <button class="toggle-btn off" id="tog3" onclick="toggleLine(3)" style="border-color:#059669;color:#059669"><span class="dot" style="background:#059669"></span>元本</button>
-      <button class="toggle-btn off" id="tog4" onclick="toggleLine(4)" style="border-color:#e11d48;color:#e11d48"><span class="dot" style="background:#e11d48"></span>評価損益</button>
+      <button class="toggle-btn off" id="tog34" onclick="togglePerf()" style="border-color:#059669;color:#059669"><span class="dot" style="background:#059669"></span>運用成績</button>
     </div>
     <div id="chartTotalWrap"></div>
   </div>
@@ -151,7 +149,7 @@ html.dark .badge-r { background:#7f1d1d; }
     </div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th class="sp-hide">現金+P</th><th class="sp-hide">投資資産</th><th class="sp-hide">元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>投資資産</th><th>元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
         <tbody id="historyTable"></tbody>
       </table>
     </div>
@@ -391,6 +389,12 @@ function toggleLine(i){
   document.getElementById('tog'+i).classList.toggle('off',!lineVis[i]);
   redrawMainChart();
 }
+function togglePerf(){
+  const on=!lineVis[3];
+  lineVis[3]=on; lineVis[4]=on;
+  document.getElementById('tog34').classList.toggle('off',!on);
+  redrawMainChart();
+}
 
 function renderHistory(){
   sortRec();
@@ -398,8 +402,8 @@ function renderHistory(){
     const prev=records[records.length-2-i];
     const mom=prev?r.total-prev.total:null;
     return`<tr${i===0?' class="tr-latest"':''}>
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="sp-hide">${fmt(r.cash)}</td>
-      <td class="sp-hide">${fmt(r.invest)}</td><td class="sp-hide">${fmt(r.principal)}</td>
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td class="${mom!==null?cls(mom):''}">${mom!==null?fmt(mom,true):'—'}</td>
