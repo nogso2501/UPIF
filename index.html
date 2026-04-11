@@ -92,6 +92,7 @@ html.dark .badge-r { background:#7f1d1d; }
 .form-note { font-size:11px; color:var(--green); }
 .editing-row { background:#fffbeb !important; }
 .sp-only { display:none; }
+.sp-show-tbl { display:none; }
 .expand-btn { background:none; border:1px solid var(--border); border-radius:4px; padding:2px 8px; cursor:pointer; color:var(--ink3); font-size:12px; transition:transform 0.2s; }
 .expand-btn.open { transform:rotate(180deg); }
 .detail-row { display:none; }
@@ -114,6 +115,8 @@ html.dark .badge-r { background:#7f1d1d; }
   .kpi-val{font-size:12px}
   .col-sp-hide{display:none}
   .sp-only{display:table-cell}
+  .sp-hide-tbl{display:none}
+  .sp-show-tbl{display:block}
 }
 </style>
 </head>
@@ -198,10 +201,18 @@ html.dark .badge-r { background:#7f1d1d; }
   </div>
   <div class="tbl-box">
     <div class="tbl-head"><div class="tbl-head-title">最近の記録（編集・削除）</div></div>
-    <div style="overflow-x:auto">
+    <!-- PC -->
+    <div class="sp-hide-tbl" style="overflow-x:auto">
       <table>
-        <thead><tr id="inputTableHead"></tr></thead>
-        <tbody id="inputTable"></tbody>
+        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
+        <tbody id="inputTablePC"></tbody>
+      </table>
+    </div>
+    <!-- スマホ -->
+    <div class="sp-show-tbl" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>日付</th><th>総資産</th><th></th></tr></thead>
+        <tbody id="inputTableSP"></tbody>
       </table>
     </div>
   </div>
@@ -522,45 +533,41 @@ function clearForm(){
 }
 function renderInputTable(){
   clearForm();editIdx=null;sortRec();
-  const isMob=window.innerWidth<=600;
-  const head=document.getElementById('inputTableHead');
-  head.innerHTML=isMob
-    ?'<th>日付</th><th>総資産</th><th></th>'
-    :'<th>日付</th><th>総資産</th><th>現金+P</th><th>評価損益</th><th>リターン</th><th></th>';
-  document.getElementById('inputTable').innerHTML=[...records].reverse().slice(0,20).map((r,i)=>{
+  const rows=[...records].reverse().slice(0,20);
+  document.getElementById('inputTablePC').innerHTML=rows.map((r,i)=>{
     const ri=records.length-1-i;
-    if(isMob){
-      return`<tr id="itr-${ri}">
-        <td>${r.date}</td><td>${fmtS(r.total)}</td>
-        <td style="text-align:center"><button class="expand-btn" id="expbtn-i-${ri}" onclick="toggleDetailI(${ri})">▽</button></td>
-      </tr>
-      <tr class="detail-row" id="detail-i-${ri}">
-        <td colspan="3" style="padding:0 12px 12px">
-          <div class="detail-content">
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-lbl">総資産</span>${fmt(r.total)}</div>
-              <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
-              <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
-              <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end">
-              <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
-              <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
-            </div>
+    return`<tr id="itr-${ri}">
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
+      <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
+      <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
+        <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('inputTableSP').innerHTML=rows.map((r,i)=>{
+    const ri=records.length-1-i;
+    return`<tr>
+      <td>${r.date}</td><td>${fmtS(r.total)}</td>
+      <td style="text-align:center"><button class="expand-btn" id="expbtn-i-${ri}" onclick="toggleDetailI(${ri})">▽</button></td>
+    </tr>
+    <tr class="detail-row" id="detail-i-${ri}">
+      <td colspan="3" style="padding:0 12px 12px">
+        <div class="detail-content">
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-lbl">総資産</span>${fmt(r.total)}</div>
+            <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
+            <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
+            <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
           </div>
-        </td>
-      </tr>`;
-    }else{
-      return`<tr id="itr-${ri}">
-        <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
-        <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
-        <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
-        <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
-          <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
-          <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
-        </div></td>
-      </tr>`;
-    }
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
+            <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
   }).join('');
 }
 function toggleDetailI(ri){
