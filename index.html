@@ -91,6 +91,15 @@ html.dark .badge-r { background:#7f1d1d; }
 .btn-excel{background:#16a34a;color:#fff;font-size:12px;padding:7px 14px}
 .form-note { font-size:11px; color:var(--green); }
 .editing-row { background:#fffbeb !important; }
+.sp-only { display:none; }
+.expand-btn { background:none; border:1px solid var(--border); border-radius:4px; padding:2px 8px; cursor:pointer; color:var(--ink3); font-size:12px; transition:transform 0.2s; }
+.expand-btn.open { transform:rotate(180deg); }
+.detail-row { display:none; }
+.detail-row.open { display:table-row; }
+.detail-content { padding:10px 4px; }
+.detail-grid { display:flex; flex-wrap:wrap; gap:6px 20px; margin-bottom:10px; }
+.detail-item { display:flex; flex-direction:column; font-family:'Courier New',monospace; font-size:13px; }
+.detail-lbl { font-size:10px; color:var(--ink3); margin-bottom:2px; font-family:inherit; }
 @media(max-width:600px){
   .kpi-row{grid-template-columns:repeat(2,1fr)}
   .charts-row{grid-template-columns:1fr}
@@ -103,6 +112,8 @@ html.dark .badge-r { background:#7f1d1d; }
   header{padding:0 10px}
   .calc-preview{grid-template-columns:1fr}
   .kpi-val{font-size:12px}
+  .col-sp-hide{display:none}
+  .sp-only{display:table-cell}
 }
 </style>
 </head>
@@ -149,7 +160,7 @@ html.dark .badge-r { background:#7f1d1d; }
     </div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>投資資産</th><th>元本</th><th>評価損益</th><th>リターン</th><th>前月比</th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th class="col-sp-hide">現金+P</th><th class="col-sp-hide">投資資産</th><th class="col-sp-hide">元本</th><th>評価損益</th><th>リターン</th><th class="col-sp-hide">前月比</th><th class="col-sp-hide"></th><th class="sp-only"></th></tr></thead>
         <tbody id="historyTable"></tbody>
       </table>
     </div>
@@ -164,6 +175,7 @@ html.dark .badge-r { background:#7f1d1d; }
 
 <!-- INPUT -->
 <div class="page" id="page-input">
+  <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleCSVImport(event)">
   <div class="form-box">
     <div class="form-title" id="formTitle">新規月次データ入力</div>
     <div class="form-grid">
@@ -180,6 +192,7 @@ html.dark .badge-r { background:#7f1d1d; }
     <div class="form-actions">
       <button class="btn btn-primary" id="saveBtn" onclick="saveRecord()">保存</button>
       <button class="btn btn-ghost" onclick="cancelEdit()">キャンセル</button>
+      <button class="btn btn-excel" onclick="document.getElementById('csvInput').click()">📂 CSVインポート</button>
       <span class="form-note" id="formNote"></span>
     </div>
   </div>
@@ -187,7 +200,7 @@ html.dark .badge-r { background:#7f1d1d; }
     <div class="tbl-head"><div class="tbl-head-title">最近の記録（編集・削除）</div></div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th class="col-sp-hide">現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
         <tbody id="inputTable"></tbody>
       </table>
     </div>
@@ -396,14 +409,56 @@ function renderHistory(){
   document.getElementById('historyTable').innerHTML=[...records].reverse().map((r,i)=>{
     const prev=records[records.length-2-i];
     const mom=prev?r.total-prev.total:null;
+    const ri=records.length-1-i;
+    const momHtml=mom!==null?`<span style="color:${mom>=0?'var(--green)':'var(--red)'}">${mom>=0?'↑':'↓'}${fmt(Math.abs(mom))}</span>`:'—';
     return`<tr${i===0?' class="tr-latest"':''}>
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
-      <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
+      <td class="col-sp-hide">${fmt(r.invest)}</td><td class="col-sp-hide">${fmt(r.principal)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
-      <td>${mom!==null?`<span style="color:${mom>=0?'var(--green)':'var(--red)'}">${mom>=0?'↑':'↓'}${fmt(Math.abs(mom))}</span>`:'—'}</td>
+      <td class="col-sp-hide">${momHtml}</td>
+      <td class="col-sp-hide"><div style="display:flex;gap:5px;justify-content:flex-end">
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editFromHistory(${ri})">編集</button>
+        <button class="btn btn-red" onclick="deleteFromHistory(${ri})">✕</button>
+      </div></td>
+      <td class="sp-only" style="text-align:center"><button class="expand-btn" id="expbtn-${ri}" onclick="toggleDetail(${ri})">▽</button></td>
+    </tr>
+    <tr class="detail-row" id="detail-${ri}">
+      <td colspan="10" style="padding:0 12px 12px">
+        <div class="detail-content">
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
+            <div class="detail-item"><span class="detail-lbl">投資資産</span>${fmt(r.invest)}</div>
+            <div class="detail-item"><span class="detail-lbl">元本</span>${fmt(r.principal)}</div>
+            <div class="detail-item"><span class="detail-lbl">前月比</span>${momHtml}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editFromHistory(${ri})">編集</button>
+            <button class="btn btn-red" onclick="deleteFromHistory(${ri})">✕</button>
+          </div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+function toggleDetail(ri){
+  const row=document.getElementById('detail-'+ri);
+  const btn=document.getElementById('expbtn-'+ri);
+  const isOpen=row.classList.toggle('open');
+  btn.textContent=isOpen?'△':'▽';
+  btn.classList.toggle('open',isOpen);
+}
+function editFromHistory(idx){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-input').classList.add('active');
+  document.querySelectorAll('.htab')[3].classList.add('active');
+  renderInputTable();
+  editRecord(idx);
+}
+function deleteFromHistory(idx){
+  if(!confirm(`${records[idx].date}のデータを削除しますか？`))return;
+  records.splice(idx,1);saveAll();renderHistory();
 }
 
 function renderYearly(){
@@ -459,7 +514,7 @@ function renderInputTable(){
   document.getElementById('inputTable').innerHTML=[...records].reverse().slice(0,20).map((r,i)=>{
     const ri=records.length-1-i;
     return`<tr id="itr-${ri}">
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
@@ -520,6 +575,58 @@ function exportCSV(){
   const now=new Date();
   a.download=`資産記録_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
   a.click();
+}
+function parseCSVLine(line){
+  const result=[];let cur='';let inQ=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"'){inQ=!inQ;}
+    else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=line[i];}
+  }
+  result.push(cur.trim());return result;
+}
+function handleCSVImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    let text=ev.target.result;
+    if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+    const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+    if(lines.length<2){alert('データがありません');return;}
+    const headers=parseCSVLine(lines[0]);
+    const dateIdx=headers.findIndex(h=>h.includes('日付'));
+    const totalIdx=headers.findIndex(h=>h.includes('総資産'));
+    const cashIdx=headers.findIndex(h=>h.includes('現金'));
+    const profitIdx=headers.findIndex(h=>h.includes('評価損益'));
+    if(dateIdx<0||totalIdx<0||cashIdx<0||profitIdx<0){
+      alert('CSVの形式が正しくありません。\n必要な列: 日付, 総資産, 現金+ポイント, 評価損益');return;
+    }
+    const newRecs=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=parseCSVLine(lines[i]);
+      const date=cols[dateIdx];
+      const total=parseFloat(cols[totalIdx]);
+      const cash=parseFloat(cols[cashIdx])||0;
+      const profit=parseFloat(cols[profitIdx])||0;
+      if(!date||!date.match(/^\d{4}\/\d{2}$/)||isNaN(total))continue;
+      const invest=total-cash,principal=invest-profit;
+      const ret=principal>0?(profit/principal)*100:0;
+      newRecs.push({date,total,cash,invest,principal,profit,ret});
+    }
+    if(newRecs.length===0){alert('インポートできるデータがありませんでした');return;}
+    const dupes=newRecs.filter(r=>records.some(ex=>ex.date===r.date));
+    const msg=`${newRecs.length}件をインポートします。${dupes.length>0?`\n（${dupes.length}件は既存データを上書き）`:''}\nよろしいですか？`;
+    if(!confirm(msg))return;
+    newRecs.forEach(r=>{
+      const ex=records.findIndex(ex=>ex.date===r.date);
+      if(ex>=0)records[ex]=r;else records.push(r);
+    });
+    saveAll();renderInputTable();
+    document.getElementById('formNote').textContent=`✓ ${newRecs.length}件インポートしました`;
+    setTimeout(()=>document.getElementById('formNote').textContent='',3000);
+  };
+  reader.readAsText(file,'UTF-8');
+  e.target.value='';
 }
 function toggleDark(){
   const dark=document.documentElement.classList.toggle('dark');
