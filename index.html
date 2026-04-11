@@ -259,6 +259,14 @@ if(!records){records=SEED.map(r=>({date:r[0],total:r[1],cash:r[2],invest:r[3],pr
 function saveAll(){store.setItem('assetlog_v5',JSON.stringify(records));}
 function sortRec(){records.sort((a,b)=>a.date<b.date?-1:1);}
 function fmt(n,sign=false){if(n===null||n===undefined)return'—';const abs=Math.abs(Math.round(n)).toLocaleString('ja-JP');if(sign)return(n>=0?'+¥':'-¥')+abs;return'¥'+abs;}
+function fmtS(n,sign=false){
+  if(n===null||n===undefined)return'—';
+  if(window.innerWidth>600)return fmt(n,sign);
+  const abs=Math.abs(Math.round(n));
+  const s=abs>=10000?Math.round(abs/10000)+'万':abs>=1000?Math.round(abs/1000)+'千':String(abs);
+  if(sign)return(n>=0?'+¥':'-¥')+s;
+  return'¥'+s;
+}
 function pct(n,sign=false){if(n===null||n===undefined)return'—';return(sign&&n>=0?'+':'')+n.toFixed(2)+'%';}
 function cls(n){return n>0?'td-pos':n<0?'td-neg':'';}
 
@@ -412,9 +420,9 @@ function renderHistory(){
     const ri=records.length-1-i;
     const momHtml=mom!==null?`<span style="color:${mom>=0?'var(--green)':'var(--red)'}">${mom>=0?'↑':'↓'}${fmt(Math.abs(mom))}</span>`:'—';
     return`<tr${i===0?' class="tr-latest"':''}>
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
+      <td>${r.date}</td><td>${fmtS(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
       <td class="col-sp-hide">${fmt(r.invest)}</td><td class="col-sp-hide">${fmt(r.principal)}</td>
-      <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
+      <td class="${cls(r.profit)}">${fmtS(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td class="col-sp-hide">${momHtml}</td>
       <td class="col-sp-hide"><div style="display:flex;gap:5px;justify-content:flex-end">
@@ -514,8 +522,8 @@ function renderInputTable(){
   document.getElementById('inputTable').innerHTML=[...records].reverse().slice(0,20).map((r,i)=>{
     const ri=records.length-1-i;
     return`<tr id="itr-${ri}">
-      <td>${r.date}</td><td>${fmt(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
-      <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
+      <td>${r.date}</td><td>${fmtS(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
+      <td class="${cls(r.profit)}">${fmtS(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
         <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
