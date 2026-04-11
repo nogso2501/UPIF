@@ -200,7 +200,7 @@ html.dark .badge-r { background:#7f1d1d; }
     <div class="tbl-head"><div class="tbl-head-title">最近の記録（編集・削除）</div></div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th class="col-sp-hide">現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th class="col-sp-hide">現金+P</th><th class="col-sp-hide">評価損益</th><th class="col-sp-hide">リターン</th><th class="col-sp-hide"></th><th class="sp-only"></th></tr></thead>
         <tbody id="inputTable"></tbody>
       </table>
     </div>
@@ -440,7 +440,7 @@ function renderHistory(){
             <div class="detail-item"><span class="detail-lbl">元本</span>${fmt(r.principal)}</div>
             <div class="detail-item"><span class="detail-lbl">前月比</span>${momHtml}</div>
           </div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;justify-content:flex-end">
             <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editFromHistory(${ri})">編集</button>
             <button class="btn btn-red" onclick="deleteFromHistory(${ri})">✕</button>
           </div>
@@ -523,14 +523,37 @@ function renderInputTable(){
     const ri=records.length-1-i;
     return`<tr id="itr-${ri}">
       <td>${r.date}</td><td>${fmtS(r.total)}</td><td class="col-sp-hide">${fmt(r.cash)}</td>
-      <td class="${cls(r.profit)}">${fmtS(r.profit,true)}</td>
-      <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
-      <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
+      <td class="${cls(r.profit)} col-sp-hide">${fmtS(r.profit,true)}</td>
+      <td class="col-sp-hide"><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
+      <td class="col-sp-hide" style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
         <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
         <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
       </div></td>
+      <td class="sp-only" style="text-align:center"><button class="expand-btn" id="expbtn-i-${ri}" onclick="toggleDetailI(${ri})">▽</button></td>
+    </tr>
+    <tr class="detail-row" id="detail-i-${ri}">
+      <td colspan="7" style="padding:0 12px 12px">
+        <div class="detail-content">
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
+            <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
+            <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="editRecord(${ri})">編集</button>
+            <button class="btn btn-red" onclick="deleteRecord(${ri})">✕</button>
+          </div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+function toggleDetailI(ri){
+  const row=document.getElementById('detail-i-'+ri);
+  const btn=document.getElementById('expbtn-i-'+ri);
+  const isOpen=row.classList.toggle('open');
+  btn.textContent=isOpen?'△':'▽';
+  btn.classList.toggle('open',isOpen);
 }
 function editRecord(idx){
   editIdx=idx;const r=records[idx];
