@@ -34,10 +34,10 @@ main { max-width:1100px; margin:0 auto; padding:20px 14px; }
 .page { display:none; } .page.active { display:block; }
 .kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
 .kpi { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; box-shadow:var(--shadow); border-left:3px solid var(--accent); }
-.kpi.kgreen{border-left-color:var(--green)} .kpi.kred{border-left-color:var(--red)} .kpi.kgold{border-left-color:var(--gold)}
+.kpi.kgreen{border-left-color:var(--green)} .kpi.kred{border-left-color:var(--red)} .kpi.kgold{border-left-color:var(--gold)} .kpi.kpurple{border-left-color:#7c3aed} .kpi.kcyan{border-left-color:#0891b2}
 .kpi-label { font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
 .kpi-val { font-family:'Courier New',monospace; font-size:16px; font-weight:700; color:var(--ink); }
-.kpi-val.g{color:var(--green)} .kpi-val.r{color:var(--red)} .kpi-val.gold{color:var(--gold)}
+.kpi-val.g{color:var(--green)} .kpi-val.r{color:var(--red)} .kpi-val.gold{color:var(--gold)} .kpi-val.blue{color:var(--accent)} .kpi-val.purple{color:#7c3aed} .kpi-val.cyan{color:#0891b2}
 .kpi-sub { font-size:10px; color:var(--ink3); margin-top:3px; font-family:'Courier New',monospace; }
 .chart-box { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow); }
 .chart-label { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px; }
@@ -353,19 +353,19 @@ function renderDash(){
   sortRec();
   const r=records[records.length-1],p=records[records.length-2];
   const diff=(a,b)=>p?a-b:null;
-  const sub=(d)=>d===null?'':((d>=0?'▲':'▼')+fmt(Math.abs(d))+' 前月比');
+  const sub=(d)=>d===null?'':(`<span style="color:${d>=0?'var(--green)':'var(--red)'}">${d>=0?'↑':'↓'}${fmt(Math.abs(d))} 前月比</span>`);
   const kpis=[
     {label:'総資産',    val:fmt(r.total),        sub:sub(diff(r.total,p?.total)),       cls:''},
     {label:'現金+ポイント',val:fmt(r.cash),       sub:(sub(diff(r.cash,p?.cash))||r.date), cls:'kgold'},
-    {label:'投資資産',  val:fmt(r.invest),        sub:sub(diff(r.invest,p?.invest)),     cls:''},
-    {label:'元本',      val:fmt(r.principal),     sub:'累計投資額',                       cls:''},
-    {label:'評価損益',  val:fmt(r.profit,true),   sub:sub(diff(r.profit,p?.profit)),     cls:r.profit>=0?'kgreen':'kred'},
-    {label:'総リターン',val:pct(r.ret,true),      sub:(p?((r.ret-p.ret>=0?'▲':'▼')+(Math.abs(r.ret-p.ret)).toFixed(2)+'% 前月比'):'元本比'), cls:r.ret>=0?'kgreen':'kred'},
+    {label:'投資資産',  val:fmt(r.invest),        sub:sub(diff(r.invest,p?.invest)),     cls:'kpurple'},
+    {label:'元本',      val:fmt(r.principal),     sub:'累計投資額',                       cls:'kgreen'},
+    {label:'評価損益',  val:fmt(r.profit,true),   sub:sub(diff(r.profit,p?.profit)),     cls:r.profit>=0?'kcyan':'kred'},
+    {label:'総リターン',val:pct(r.ret,true),      sub:(p?(`<span style="color:${r.ret-p.ret>=0?'var(--green)':'var(--red)'}">${r.ret-p.ret>=0?'↑':'↓'}${(Math.abs(r.ret-p.ret)).toFixed(2)}% 前月比</span>`):'元本比'), cls:r.ret>=0?'kcyan':'kred'},
   ];
   document.getElementById('kpiRow').innerHTML=kpis.map(k=>`
     <div class="kpi ${k.cls}">
       <div class="kpi-label">${k.label}</div>
-      <div class="kpi-val ${k.cls==='kgreen'?'g':k.cls==='kred'?'r':k.cls==='kgold'?'gold':''}">${k.val}</div>
+      <div class="kpi-val ${k.cls==='kgreen'?'g':k.cls==='kred'?'r':k.cls==='kgold'?'gold':k.cls==='kpurple'?'purple':k.cls==='kcyan'?'cyan':''}">${k.val}</div>
       ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
     </div>`).join('');
   const labels=records.map(r=>r.date);
@@ -401,7 +401,7 @@ function renderHistory(){
       <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
-      <td class="${mom!==null?cls(mom):''}">${mom!==null?fmt(mom,true):'—'}</td>
+      <td>${mom!==null?`<span style="color:${mom>=0?'var(--green)':'var(--red)'}">${mom>=0?'↑':'↓'}${fmt(Math.abs(mom))}</span>`:'—'}</td>
     </tr>`;
   }).join('');
 }
