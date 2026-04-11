@@ -286,6 +286,7 @@ function showPage(id,btn){
   document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  store.setItem('upif_tab',id);
   if(id==='dash')renderDash();
   if(id==='history')renderHistory();
   if(id==='yearly')renderYearly();
@@ -708,7 +709,16 @@ window.addEventListener('load',()=>{
     document.documentElement.classList.add('dark');
     document.getElementById('darkBtn').textContent='☀️';
   }
-  renderDash();
+  const tab=store.getItem('upif_tab')||'dash';
+  const tabIdx={dash:0,history:1,yearly:2,input:3};
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.querySelectorAll('.htab')[tabIdx[tab]||0].classList.add('active');
+  if(tab==='dash')renderDash();
+  else if(tab==='history')renderHistory();
+  else if(tab==='yearly')renderYearly();
+  else if(tab==='input')renderInputTable();
 });
 </script>
 </body>
