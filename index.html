@@ -204,7 +204,7 @@ html.dark .badge-r { background:#7f1d1d; }
     <!-- PC -->
     <div class="sp-hide-tbl" style="overflow-x:auto">
       <table>
-        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
+        <thead><tr><th>日付</th><th>総資産</th><th>現金+P</th><th>投資資産</th><th>元本</th><th>評価損益</th><th>リターン</th><th></th></tr></thead>
         <tbody id="inputTablePC"></tbody>
       </table>
     </div>
@@ -538,6 +538,7 @@ function renderInputTable(){
     const ri=records.length-1-i;
     return`<tr id="itr-${ri}">
       <td>${r.date}</td><td>${fmt(r.total)}</td><td>${fmt(r.cash)}</td>
+      <td>${fmt(r.invest)}</td><td>${fmt(r.principal)}</td>
       <td class="${cls(r.profit)}">${fmt(r.profit,true)}</td>
       <td><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></td>
       <td style="text-align:right"><div style="display:flex;gap:5px;justify-content:flex-end">
@@ -559,6 +560,8 @@ function renderInputTable(){
             <div class="detail-item"><span class="detail-lbl">総資産</span>${fmt(r.total)}</div>
             <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
             <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
+            <div class="detail-item"><span class="detail-lbl">投資資産</span>${fmt(r.invest)}</div>
+            <div class="detail-item"><span class="detail-lbl">元本</span>${fmt(r.principal)}</div>
             <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end">
