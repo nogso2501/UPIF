@@ -435,6 +435,9 @@ function renderHistory(){
       <td colspan="10" style="padding:0 12px 12px">
         <div class="detail-content">
           <div class="detail-grid">
+            <div class="detail-item"><span class="detail-lbl">総資産</span>${fmt(r.total)}</div>
+            <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
+            <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
             <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
             <div class="detail-item"><span class="detail-lbl">投資資産</span>${fmt(r.invest)}</div>
             <div class="detail-item"><span class="detail-lbl">元本</span>${fmt(r.principal)}</div>
@@ -535,8 +538,9 @@ function renderInputTable(){
       <td colspan="7" style="padding:0 12px 12px">
         <div class="detail-content">
           <div class="detail-grid">
-            <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
+            <div class="detail-item"><span class="detail-lbl">総資産</span>${fmt(r.total)}</div>
             <div class="detail-item"><span class="detail-lbl">評価損益</span><span class="${cls(r.profit)}">${fmt(r.profit,true)}</span></div>
+            <div class="detail-item"><span class="detail-lbl">現金+P</span>${fmt(r.cash)}</div>
             <div class="detail-item"><span class="detail-lbl">リターン</span><span class="badge ${r.ret>=0?'badge-g':'badge-r'}">${pct(r.ret,true)}</span></div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end">
