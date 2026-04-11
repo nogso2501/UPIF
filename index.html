@@ -471,6 +471,7 @@ function toggleDetail(ri){
   btn.classList.toggle('open',isOpen);
 }
 function editFromHistory(idx){
+  editOrigin='history';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-input').classList.add('active');
@@ -511,6 +512,19 @@ function renderYearly(){
 }
 
 let editIdx=null;
+let editOrigin=null;
+function goBack(){
+  const origin=editOrigin;editOrigin=null;
+  if(origin==='history'){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('page-history').classList.add('active');
+    document.querySelectorAll('.htab')[1].classList.add('active');
+    renderHistory();
+  }else{
+    renderInputTable();
+  }
+}
 function autoCalc(){
   const total=parseFloat(document.getElementById('f_total').value)||0;
   const cash=parseFloat(document.getElementById('f_cash').value)||0;
@@ -593,7 +607,7 @@ function editRecord(idx){
   document.getElementById('itr-'+idx)?.classList.add('editing-row');
   window.scrollTo(0,0);
 }
-function cancelEdit(){renderInputTable();}
+function cancelEdit(){goBack();}
 function saveRecord(){
   const date=document.getElementById('f_date').value.trim();
   const total=parseFloat(document.getElementById('f_total').value)||0;
@@ -610,9 +624,9 @@ function saveRecord(){
     if(ex>=0){if(!confirm(`${date}のデータが既にあります。上書きしますか？`))return;records[ex]=entry;}
     else records.push(entry);
   }
-  saveAll();renderInputTable();
-  document.getElementById('formNote').textContent='✓ 保存しました';
-  setTimeout(()=>document.getElementById('formNote').textContent='',2000);
+  saveAll();goBack();
+  if(!editOrigin)document.getElementById('formNote').textContent='✓ 保存しました';
+  setTimeout(()=>{const n=document.getElementById('formNote');if(n)n.textContent='';},2000);
 }
 function deleteRecord(idx){
   if(!confirm(`${records[idx].date}のデータを削除しますか？`))return;
