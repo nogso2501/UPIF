@@ -182,7 +182,7 @@ html.dark .badge-r { background:#7f1d1d; }
   <div class="form-box">
     <div class="form-title" id="formTitle">新規月次データ入力</div>
     <div class="form-grid">
-      <div class="fg"><label>日付 (YYYY/MM) <span style="color:#dc2626">＊</span></label><input id="f_date" placeholder="2026/03" maxlength="7"></div>
+      <div class="fg"><label>日付 <span style="color:#dc2626">＊</span></label><input id="f_date" type="month"></div>
       <div class="fg"><label>総資産 (円) <span style="color:#dc2626">＊</span></label><input id="f_total" type="number" placeholder="0" oninput="autoCalc()"></div>
       <div class="fg"><label>現金+ポイント (円) <span style="color:#dc2626">＊</span></label><input id="f_cash" type="number" placeholder="0" oninput="autoCalc()"></div>
       <div class="fg"><label>評価損益 (円) <span style="color:#dc2626">＊</span></label><input id="f_profit" type="number" placeholder="0" oninput="autoCalc()"></div>
@@ -537,11 +537,16 @@ function autoCalc(){
   document.getElementById('calc_principal').textContent=(total||cash)?fv(principal):'—';
   document.getElementById('calc_ret').textContent=principal?(ret>=0?'+':'')+ret.toFixed(2)+'%':'—';
 }
+function nextMonthVal(){
+  sortRec();
+  if(records.length===0){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
+  const[y,m]=records[records.length-1].date.split('/').map(Number);
+  return m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
+}
 function clearForm(){
   ['f_total','f_cash','f_profit'].forEach(id=>document.getElementById(id).value='');
   ['calc_invest','calc_principal','calc_ret'].forEach(id=>document.getElementById(id).textContent='—');
-  const now=new Date();
-  document.getElementById('f_date').value=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('f_date').value=nextMonthVal();
   document.getElementById('formTitle').textContent='新規月次データ入力';
   document.getElementById('saveBtn').textContent='保存';
   document.getElementById('formNote').textContent='';
@@ -597,7 +602,7 @@ function toggleDetailI(ri){
 }
 function editRecord(idx){
   editIdx=idx;const r=records[idx];
-  document.getElementById('f_date').value=r.date;
+  document.getElementById('f_date').value=r.date.replace('/','-');
   document.getElementById('f_total').value=r.total;
   document.getElementById('f_cash').value=r.cash;
   document.getElementById('f_profit').value=r.profit;
@@ -610,13 +615,13 @@ function editRecord(idx){
 }
 function cancelEdit(){goBack();}
 function saveRecord(){
-  const date=document.getElementById('f_date').value.trim();
+  const date=document.getElementById('f_date').value.replace('-','/');
   const total=parseFloat(document.getElementById('f_total').value)||0;
   const cash=parseFloat(document.getElementById('f_cash').value)||0;
   const profit=parseFloat(document.getElementById('f_profit').value)||0;
   const invest=total-cash,principal=invest-profit;
   const ret=principal>0?(profit/principal)*100:0;
-  if(!date.match(/^\d{4}\/\d{2}$/)){alert('日付はYYYY/MM形式で');return;}
+  if(!date.match(/^\d{4}\/\d{2}$/)){alert('日付を選択してください');return;}
   if(!total){alert('総資産を入力してください');return;}
   const entry={date,total,cash,invest,principal,profit,ret};
   if(editIdx!==null){records[editIdx]=entry;}
