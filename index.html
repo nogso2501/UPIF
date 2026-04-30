@@ -148,10 +148,8 @@ html.dark .badge-r { background:#7f1d1d; }
     </div>
     <div id="chartTotalWrap"></div>
   </div>
-  <div class="charts-row">
-    <div class="chart-box" style="margin-bottom:0"><div class="chart-label">評価損益 推移</div><div id="chartProfitWrap"></div></div>
-    <div class="chart-box" style="margin-bottom:0"><div class="chart-label">総リターン (%)</div><div id="chartReturnWrap"></div></div>
-  </div>
+  <div class="chart-box"><div class="chart-label">評価損益 推移</div><div id="chartProfitWrap"></div></div>
+  <div class="chart-box"><div class="chart-label">総リターン (%)</div><div id="chartReturnWrap"></div></div>
 </div>
 
 <!-- HISTORY -->
@@ -403,8 +401,8 @@ function renderDash(){
     </div>`).join('');
   const labels=records.map(r=>r.date);
   redrawMainChart(labels);
-  document.getElementById('chartProfitWrap').innerHTML=makeBar(records.map(r=>r.profit),labels,180);
-  document.getElementById('chartReturnWrap').innerHTML=makeBar(records.map(r=>r.ret),labels,180);
+  document.getElementById('chartProfitWrap').innerHTML=makeBar(records.map(r=>r.profit),labels,220);
+  document.getElementById('chartReturnWrap').innerHTML=makeBar(records.map(r=>r.ret),labels,220);
 }
 
 function redrawMainChart(labels){
