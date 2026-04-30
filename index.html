@@ -344,33 +344,32 @@ async function setupGist(){
   setSyncStatus('⏳ 接続中…');
   let gistId=document.getElementById('gh_gist_id').value.trim()||store.getItem('upif_gist_id');
   if(!gistId){
-    // 既存のUPIF Gistを検索
+    setSyncStatus('⏳ 既存Gistを検索中…');
     try{
       const res=await gistFetch('/gists?per_page=100');
-      if(res.ok){
-        const gists=await res.json();
-        const found=gists.find(g=>g.files['upif_data.json']);
-        if(found)gistId=found.id;
-      }
-    }catch(e){}
+      if(!res.ok){setSyncStatus(`⚠ 認証失敗(${res.status})：トークンを確認`);return;}
+      const gists=await res.json();
+      const found=gists.find(g=>g.files['upif_data.json']);
+      if(found){gistId=found.id;setSyncStatus('✓ 既存Gistを発見');}
+      else setSyncStatus('既存Gistなし→新規作成します');
+    }catch(e){setSyncStatus('⚠ 検索失敗：'+e.message);return;}
   }
   if(!gistId){
-    // 見つからなければ新規作成
     try{
       const content=JSON.stringify({records,lastUpdated:new Date().toISOString()},null,2);
       const res=await gistFetch('/gists','POST',{description:'UPIF Investment Data',public:false,files:{'upif_data.json':{content}}});
-      if(!res.ok){setSyncStatus('⚠ 接続失敗（トークンを確認）');return;}
+      if(!res.ok){setSyncStatus(`⚠ 作成失敗(${res.status})`);return;}
       const gist=await res.json();
       gistId=gist.id;
-    }catch(e){setSyncStatus('⚠ 接続失敗');return;}
+      setSyncStatus('✓ Gistを新規作成');
+    }catch(e){setSyncStatus('⚠ 作成失敗：'+e.message);return;}
   }
   store.setItem('upif_gist_id',gistId);
   document.getElementById('gh_gist_id').value=gistId;
-  // Gistからデータを取得して反映
   setSyncStatus('⏳ データ取得中…');
   const synced=await syncFromGist();
-  setSyncStatus(synced?'☁ 接続完了・同期済み':'☁ 接続完了');
-  if(synced)renderDash();
+  setSyncStatus(synced?`☁ 完了（${records.length}件取得）`:'⚠ データ取得失敗');
+  if(synced){renderDash();}
 }
 async function manualSync(){
   if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
@@ -413,11 +412,16 @@ function showPage(id,btn){
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   store.setItem('upif_tab',id);
-  if(id==='dash')renderDash();
   if(id==='history')renderHistory();
   if(id==='yearly')renderYearly();
   if(id==='input')renderInputTable();
   if(id==='settings')renderSettings();
+  if(id==='dash'){
+    if(store.getItem('upif_gh_token')&&store.getItem('upif_gist_id')){
+      setSyncStatus('⏳ 同期中…');
+      syncFromGist().then(ok=>{setSyncStatus(ok?'☁ 同期済み':'⚠ 同期失敗');renderDash();});
+    }else{renderDash();}
+  }
 }
 
 const lineVis=[true,true,true,false,false];
