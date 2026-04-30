@@ -129,9 +129,7 @@ html.dark .badge-r { background:#7f1d1d; }
       <button class="htab" onclick="showPage('history',this)">記録</button>
       <button class="htab" onclick="showPage('yearly',this)">年次</button>
       <button class="htab" onclick="showPage('input',this)">入力</button>
-      <button class="htab" onclick="showPage('settings',this)">設定</button>
     </div>
-    <span id="syncIndicator" style="font-size:11px;color:#60a5fa;margin-right:4px"></span>
     <button class="dark-toggle" id="darkBtn" onclick="toggleDark()">🌙</button>
   </div>
 </header>
@@ -218,34 +216,6 @@ html.dark .badge-r { background:#7f1d1d; }
   </div>
 </div>
 
-<!-- SETTINGS -->
-<div class="page" id="page-settings">
-  <div class="form-box">
-    <div class="form-title">クラウド同期（GitHub Gist）</div>
-    <div id="syncStatusBox" style="margin-bottom:16px;padding:10px 14px;border-radius:8px;background:var(--bg3);font-size:12px;color:var(--ink2)">未設定</div>
-    <div class="fg" style="margin-bottom:12px">
-      <label>GitHub Personal Access Token</label>
-      <input type="password" id="gh_token" placeholder="ghp_xxxxxxxxxxxx">
-    </div>
-    <div class="fg" style="margin-bottom:16px">
-      <label>Gist ID（接続後に自動設定）</label>
-      <input type="text" id="gh_gist_id" placeholder="自動で作成されます" readonly style="color:var(--ink3)">
-    </div>
-    <div class="form-actions" style="margin-bottom:20px">
-      <button class="btn btn-primary" onclick="setupGist()">接続・設定</button>
-      <button class="btn btn-ghost" onclick="manualSync()">↓ Gistから取得</button>
-      <button class="btn btn-ghost" onclick="pushToGist()">↑ Gistへ送信</button>
-      <button class="btn btn-red" style="font-size:12px;padding:9px 14px" onclick="clearGistSettings()">設定クリア</button>
-    </div>
-    <div style="font-size:12px;color:var(--ink3);line-height:1.9;border-top:1px solid var(--border);padding-top:14px">
-      <b style="color:var(--ink2)">設定手順</b><br>
-      1. <a href="https://github.com/settings/tokens/new?scopes=gist&description=UPIF" target="_blank" style="color:var(--accent)">こちら</a>からGitHub Personal Access Tokenを発行<br>
-      2. スコープは <b>gist</b> にチェック<br>
-      3. 発行されたトークンを上の欄に貼り付けて「接続・設定」<br>
-      4. 以降は保存のたびに自動でGistへ同期されます
-    </div>
-  </div>
-</div>
 
 </main>
 <script>
@@ -298,108 +268,6 @@ let records=JSON.parse(store.getItem('assetlog_v5')||'null');
 if(!records){records=SEED.map(r=>({date:r[0],total:r[1],cash:r[2],invest:r[3],principal:r[4],profit:r[5],ret:r[6]}));saveAll();}
 function saveAll(){
   store.setItem('assetlog_v5',JSON.stringify(records));
-  if(store.getItem('upif_gh_token')&&store.getItem('upif_gist_id')){
-    setSyncStatus('⏳ 同期中…');
-    syncToGist().then(ok=>setSyncStatus(ok?'☁ 同期済み':'⚠ 同期失敗'));
-  }
-}
-function setSyncStatus(msg){
-  document.getElementById('syncIndicator').textContent=msg;
-  const box=document.getElementById('syncStatusBox');
-  if(box)box.textContent=msg;
-}
-async function gistFetch(path,method='GET',body=null){
-  const token=store.getItem('upif_gh_token');
-  const opts={method,headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'}};
-  if(body)opts.body=JSON.stringify(body);
-  return fetch('https://api.github.com'+path,opts);
-}
-async function syncFromGist(){
-  const gistId=store.getItem('upif_gist_id');
-  if(!gistId)return false;
-  try{
-    const res=await gistFetch(`/gists/${gistId}`);
-    if(!res.ok)return false;
-    const gist=await res.json();
-    const content=gist.files['upif_data.json']?.content;
-    if(!content)return false;
-    const data=JSON.parse(content);
-    if(data.records){records=data.records;store.setItem('assetlog_v5',JSON.stringify(records));return true;}
-  }catch(e){console.error(e);}
-  return false;
-}
-async function syncToGist(){
-  const gistId=store.getItem('upif_gist_id');
-  if(!gistId)return false;
-  try{
-    const content=JSON.stringify({records,lastUpdated:new Date().toISOString()},null,2);
-    const res=await gistFetch(`/gists/${gistId}`,'PATCH',{files:{'upif_data.json':{content}}});
-    return res.ok;
-  }catch(e){console.error(e);}
-  return false;
-}
-async function setupGist(){
-  const token=document.getElementById('gh_token').value.trim();
-  if(!token){alert('トークンを入力してください');return;}
-  store.setItem('upif_gh_token',token);
-  setSyncStatus('⏳ 接続中…');
-  let gistId=document.getElementById('gh_gist_id').value.trim()||store.getItem('upif_gist_id');
-  if(!gistId){
-    setSyncStatus('⏳ 既存Gistを検索中…');
-    try{
-      const res=await gistFetch('/gists?per_page=100');
-      if(!res.ok){setSyncStatus(`⚠ 認証失敗(${res.status})：トークンを確認`);return;}
-      const gists=await res.json();
-      const found=gists.find(g=>g.files['upif_data.json']);
-      if(found){gistId=found.id;setSyncStatus('✓ 既存Gistを発見');}
-      else setSyncStatus('既存Gistなし→新規作成します');
-    }catch(e){setSyncStatus('⚠ 検索失敗：'+e.message);return;}
-  }
-  if(!gistId){
-    try{
-      const content=JSON.stringify({records,lastUpdated:new Date().toISOString()},null,2);
-      const res=await gistFetch('/gists','POST',{description:'UPIF Investment Data',public:false,files:{'upif_data.json':{content}}});
-      if(!res.ok){setSyncStatus(`⚠ 作成失敗(${res.status})`);return;}
-      const gist=await res.json();
-      gistId=gist.id;
-      setSyncStatus('✓ Gistを新規作成');
-    }catch(e){setSyncStatus('⚠ 作成失敗：'+e.message);return;}
-  }
-  store.setItem('upif_gist_id',gistId);
-  document.getElementById('gh_gist_id').value=gistId;
-  setSyncStatus('⏳ データ取得中…');
-  const synced=await syncFromGist();
-  setSyncStatus(synced?`☁ 完了（${records.length}件取得）`:'⚠ データ取得失敗');
-  if(synced){renderDash();}
-}
-async function manualSync(){
-  if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
-  setSyncStatus('⏳ 取得中…');
-  const ok=await syncFromGist();
-  if(ok){setSyncStatus(`☁ 取得完了（${records.length}件）`);renderDash();}
-  else setSyncStatus('⚠ 取得失敗');
-}
-async function pushToGist(){
-  if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
-  if(!store.getItem('upif_gist_id')){alert('Gist IDが設定されていません。先に「接続・設定」を行ってください');return;}
-  setSyncStatus('⏳ 送信中…');
-  const ok=await syncToGist();
-  setSyncStatus(ok?`☁ 送信完了（${records.length}件）`:'⚠ 送信失敗');
-}
-function clearGistSettings(){
-  if(!confirm('同期設定をクリアしますか？'))return;
-  store.setItem('upif_gh_token','');store.setItem('upif_gist_id','');
-  document.getElementById('gh_token').value='';
-  document.getElementById('gh_gist_id').value='';
-  setSyncStatus('未設定');
-}
-function renderSettings(){
-  const token=store.getItem('upif_gh_token')||'';
-  const gistId=store.getItem('upif_gist_id')||'';
-  document.getElementById('gh_token').value=token;
-  document.getElementById('gh_gist_id').value=gistId;
-  const box=document.getElementById('syncStatusBox');
-  box.textContent=token&&gistId?'☁ 設定済み':'未設定';
 }
 function sortRec(){records.sort((a,b)=>a.date<b.date?-1:1);}
 function fmt(n,sign=false){if(n===null||n===undefined)return'—';const abs=Math.abs(Math.round(n)).toLocaleString('ja-JP');if(sign)return(n>=0?'+¥':'-¥')+abs;return'¥'+abs;}
@@ -423,13 +291,7 @@ function showPage(id,btn){
   if(id==='history')renderHistory();
   if(id==='yearly')renderYearly();
   if(id==='input')renderInputTable();
-  if(id==='settings')renderSettings();
-  if(id==='dash'){
-    if(store.getItem('upif_gh_token')&&store.getItem('upif_gist_id')){
-      setSyncStatus('⏳ 同期中…');
-      syncFromGist().then(ok=>{setSyncStatus(ok?'☁ 同期済み':'⚠ 同期失敗');renderDash();});
-    }else{renderDash();}
-  }
+  if(id==='dash')renderDash();
 }
 
 const lineVis=[true,true,true,false,false];
@@ -854,26 +716,15 @@ window.addEventListener('load',()=>{
     document.getElementById('darkBtn').textContent='☀️';
   }
   const tab=store.getItem('upif_tab')||'dash';
-  const tabIdx={dash:0,history:1,yearly:2,input:3,settings:4};
+  const tabIdx={dash:0,history:1,yearly:2,input:3};
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   document.querySelectorAll('.htab')[tabIdx[tab]||0].classList.add('active');
-  // Gist同期してからレンダリング
-  const doRender=()=>{
-    if(tab==='dash')renderDash();
-    else if(tab==='history')renderHistory();
-    else if(tab==='yearly')renderYearly();
-    else if(tab==='input')renderInputTable();
-    else if(tab==='settings')renderSettings();
-  };
-  if(store.getItem('upif_gh_token')&&store.getItem('upif_gist_id')){
-    setSyncStatus('⏳ 同期中…');
-    syncFromGist().then(ok=>{
-      setSyncStatus(ok?'☁ 同期済み':'⚠ 同期失敗');
-      doRender();
-    });
-  }else{doRender();}
+  if(tab==='dash')renderDash();
+  else if(tab==='history')renderHistory();
+  else if(tab==='yearly')renderYearly();
+  else if(tab==='input')renderInputTable();
 });
 </script>
 </body>
