@@ -233,7 +233,8 @@ html.dark .badge-r { background:#7f1d1d; }
     </div>
     <div class="form-actions" style="margin-bottom:20px">
       <button class="btn btn-primary" onclick="setupGist()">接続・設定</button>
-      <button class="btn btn-ghost" onclick="manualSync()">今すぐ同期</button>
+      <button class="btn btn-ghost" onclick="manualSync()">↓ Gistから取得</button>
+      <button class="btn btn-ghost" onclick="pushToGist()">↑ Gistへ送信</button>
       <button class="btn btn-red" style="font-size:12px;padding:9px 14px" onclick="clearGistSettings()">設定クリア</button>
     </div>
     <div style="font-size:12px;color:var(--ink3);line-height:1.9;border-top:1px solid var(--border);padding-top:14px">
@@ -373,10 +374,17 @@ async function setupGist(){
 }
 async function manualSync(){
   if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
-  setSyncStatus('⏳ 同期中…');
+  setSyncStatus('⏳ 取得中…');
   const ok=await syncFromGist();
-  if(ok){setSyncStatus('☁ 同期済み');renderDash();}
-  else setSyncStatus('⚠ 同期失敗');
+  if(ok){setSyncStatus(`☁ 取得完了（${records.length}件）`);renderDash();}
+  else setSyncStatus('⚠ 取得失敗');
+}
+async function pushToGist(){
+  if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
+  if(!store.getItem('upif_gist_id')){alert('Gist IDが設定されていません。先に「接続・設定」を行ってください');return;}
+  setSyncStatus('⏳ 送信中…');
+  const ok=await syncToGist();
+  setSyncStatus(ok?`☁ 送信完了（${records.length}件）`:'⚠ 送信失敗');
 }
 function clearGistSettings(){
   if(!confirm('同期設定をクリアしますか？'))return;
