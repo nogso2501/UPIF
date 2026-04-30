@@ -342,19 +342,35 @@ async function setupGist(){
   if(!token){alert('トークンを入力してください');return;}
   store.setItem('upif_gh_token',token);
   setSyncStatus('⏳ 接続中…');
-  let gistId=store.getItem('upif_gist_id');
+  let gistId=document.getElementById('gh_gist_id').value.trim()||store.getItem('upif_gist_id');
   if(!gistId){
+    // 既存のUPIF Gistを検索
+    try{
+      const res=await gistFetch('/gists?per_page=100');
+      if(res.ok){
+        const gists=await res.json();
+        const found=gists.find(g=>g.files['upif_data.json']);
+        if(found)gistId=found.id;
+      }
+    }catch(e){}
+  }
+  if(!gistId){
+    // 見つからなければ新規作成
     try{
       const content=JSON.stringify({records,lastUpdated:new Date().toISOString()},null,2);
       const res=await gistFetch('/gists','POST',{description:'UPIF Investment Data',public:false,files:{'upif_data.json':{content}}});
       if(!res.ok){setSyncStatus('⚠ 接続失敗（トークンを確認）');return;}
       const gist=await res.json();
       gistId=gist.id;
-      store.setItem('upif_gist_id',gistId);
     }catch(e){setSyncStatus('⚠ 接続失敗');return;}
   }
+  store.setItem('upif_gist_id',gistId);
   document.getElementById('gh_gist_id').value=gistId;
-  setSyncStatus('☁ 接続完了・同期済み');
+  // Gistからデータを取得して反映
+  setSyncStatus('⏳ データ取得中…');
+  const synced=await syncFromGist();
+  setSyncStatus(synced?'☁ 接続完了・同期済み':'☁ 接続完了');
+  if(synced)renderDash();
 }
 async function manualSync(){
   if(!store.getItem('upif_gh_token')){alert('先に接続設定を行ってください');return;}
